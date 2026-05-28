@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sheep Hunt — Eid Al-Adha 🐑</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #0b3320;
+  min-height: 100vh;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Stars ── */
+#stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
+.star {
+  position:absolute; background:#fff; border-radius:50%;
+  animation: twinkle 2s infinite alternate;
+}
+@keyframes twinkle { from{opacity:.2} to{opacity:.9} }
+
+/* ── Screens shared ── */
+.screen {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background: rgba(5,20,12,.93);
+  backdrop-filter: blur(10px);
+  z-index:600; gap:18px; padding:28px;
+}
+
+/* ── Welcome Screen ── */
+#welcome-screen .moon { font-size:68px; animation: sway 3s ease-in-out infinite alternate; }
+@keyframes sway { from{transform:rotate(-10deg)} to{transform:rotate(10deg)} }
+
+#welcome-screen .eid-greeting {
+  font-size:13px; font-weight:600; letter-spacing:2px;
+  color:#f5c842; text-transform:uppercase; opacity:.8;
+}
+#welcome-screen h1 {
+  font-size:34px; font-weight:900; color:#fff;
+  text-align:center; line-height:1.25;
+}
+#welcome-screen h1 span { color:#f5c842; }
+#welcome-screen .subtitle {
+  font-size:14px; color:rgba(255,255,255,.6);
+  text-align:center; line-height:1.8; max-width:320px;
+}
+
+.legend {
+  display:flex; gap:14px; align-items:center;
+  background:rgba(255,255,255,.06); border-radius:14px;
+  padding:12px 20px; border:1px solid rgba(255,255,255,.1);
+  flex-wrap:wrap; justify-content:center;
+}
+.legend-item { display:flex; align-items:center; gap:6px; font-size:13px; color:rgba(255,255,255,.75); }
+.legend-dot {
+  width:22px; height:22px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px;
+}
+.dot-white { background:#e8e8e8; }
+.dot-red   { background:#e74c3c; }
+.dot-black { background:#2c2c2c; border:1px solid #555; }
+.dot-blue  { background:#2980b9; }
+
+.btn {
+  padding:15px 44px; border:none; border-radius:50px;
+  font-family:'Poppins',sans-serif; font-size:18px; font-weight:700;
+  cursor:pointer; transition:all .2s;
+}
+.btn-gold {
+  background:#f5c842; color:#1a1000;
+  box-shadow:0 4px 22px rgba(245,200,66,.4);
+}
+.btn-gold:hover { transform:translateY(-2px) scale(1.04); box-shadow:0 8px 30px rgba(245,200,66,.5); }
+.btn-gold:active { transform:scale(.97); }
+.btn-ghost {
+  background:rgba(255,255,255,.08); color:#fff;
+  border:1px solid rgba(255,255,255,.2); font-size:15px; padding:11px 30px;
+}
+.btn-ghost:hover { background:rgba(255,255,255,.14); }
+
+/* ── HUD ── */
+#hud {
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 22px;
+  background:rgba(0,0,0,.35); backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  z-index:100;
+}
+.hud-box { display:flex; flex-direction:column; align-items:center; gap:1px; }
+.hud-label { font-size:10px; font-weight:600; color:rgba(255,255,255,.45); letter-spacing:.8px; text-transform:uppercase; }
+.hud-value { font-size:24px; font-weight:900; color:#f5c842; }
+#hud-title { font-size:15px; font-weight:700; color:#fff; }
+
+/* Lives */
+#lives-bar {
+  position:fixed; top:68px; left:50%; transform:translateX(-50%);
+  display:flex; gap:7px; z-index:90;
+}
+.life { font-size:18px; transition:all .3s; }
+.life.lost { opacity:.18; transform:scale(.75); filter:grayscale(1); }
+
+/* Progress bar */
+#prog-wrap {
+  position:fixed; bottom:68px; left:50%; transform:translateX(-50%);
+  width:240px; z-index:90;
+}
+#prog-track {
+  background:rgba(255,255,255,.1); border-radius:50px; height:9px;
+  overflow:hidden; border:1px solid rgba(255,255,255,.12);
+}
+#prog-fill {
+  height:100%;
+  background:linear-gradient(90deg,#2d8a56,#f5c842);
+  border-radius:50px; width:0%; transition:width .3s ease;
+}
+#prog-label { text-align:center; font-size:11px; color:rgba(255,255,255,.45); margin-top:4px; }
+
+/* ── Ground ── */
+#ground {
+  position:fixed; bottom:0; left:0; right:0; height:58px;
+  background:linear-gradient(to top,#1a5c3a,#0d3d2b);
+  border-top:2px solid #2d8a56; z-index:50;
+  display:flex; align-items:center; justify-content:space-around; padding:0 8px;
+  font-size:18px; opacity:.65;
+}
+
+/* ── Sheep ── */
+.sheep-wrap {
+  position:absolute; cursor:pointer; z-index:20;
+  width:56px; height:56px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px;
+  transition:transform .1s;
+  animation:wiggle .7s ease-in-out infinite alternate;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.sheep-wrap:hover { transform:scale(1.18); }
+.sheep-wrap:active { transform:scale(.85); }
+
+@keyframes wiggle { from{transform:rotate(-6deg)} to{transform:rotate(6deg)} }
+
+/* Colored sheep emoji using CSS filters */
+.sheep-white .sheep-emoji { filter: none; }
+.sheep-red   .sheep-emoji { filter: sepia(1) saturate(8) hue-rotate(320deg) brightness(0.9); }
+.sheep-black .sheep-emoji { filter: brightness(0.15) contrast(1.2); }
+.sheep-blue  .sheep-emoji { filter: sepia(1) saturate(8) hue-rotate(180deg) brightness(0.9); }
+
+.sheep-emoji {
+  font-size:36px;
+  display:block;
+  transition: filter .2s;
+}
+
+/* hide old badge */
+.sheep-badge { display:none; }
+
+/* ── Floating effects ── */
+.fx {
+  position:absolute; pointer-events:none; z-index:300;
+  font-size:20px; font-weight:700;
+  animation:floatup .85s ease-out forwards;
+}
+.fx-good { color:#f5c842; text-shadow:0 0 8px rgba(245,200,66,.7); }
+.fx-bad  { color:#e74c3c; }
+.fx-wrong{ color:#e67e22; }
+@keyframes floatup {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-72px) scale(1.25); }
+}
+
+/* ── Win Screen ── */
+#win-screen {
+  display:none;
+  position:relative;
+  overflow-y:auto;
+  justify-content:flex-start;
+  padding:24px 20px 24px;
+}
+
+
+/* Gift box */
+#gift-stage {
+  position:relative;
+  width:100%;
+  flex:1;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+#gift-box {
+  font-size:110px; line-height:1;
+  animation:giftbounce 1s ease-in-out infinite alternate;
+  display:block; text-align:center;
+  transition:transform .3s, opacity .3s;
+}
+@keyframes giftbounce { from{transform:translateY(0) rotate(-4deg)} to{transform:translateY(-10px) rotate(4deg)} }
+#gift-hint {
+  font-size:13px; color:rgba(255,255,255,.55);
+  text-align:center; margin-top:4px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* Card reveal */
+#reward-card {
+  display:none;
+  background: linear-gradient(135deg,#0f2718,#1a4a2e);
+  border:1px solid rgba(245,200,66,.3);
+  border-radius:24px;
+  padding:22px 20px;
+  width:100%;
+  flex:1;
+  animation:cardIn .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes cardIn {
+  from { opacity:0; transform:scale(.7) translateY(30px); }
+  to   { opacity:1; transform:scale(1)  translateY(0);    }
+}
+.card-badge {
+  display:inline-block;
+  background:rgba(245,200,66,.15); color:#f5c842;
+  font-size:11px; font-weight:600; letter-spacing:1.2px;
+  text-transform:uppercase; padding:4px 12px; border-radius:50px;
+  border:1px solid rgba(245,200,66,.3); margin-bottom:12px;
+}
+.card-title {
+  font-size:19px; font-weight:900; color:#fff;
+  line-height:1.3; margin-bottom:8px;
+}
+.card-title span { color:#f5c842; }
+.card-body {
+  font-size:12.5px; color:rgba(255,255,255,.7);
+  line-height:1.7; margin-bottom:16px;
+}
+.card-body strong { color:#fff; font-weight:600; }
+.card-links { display:flex; flex-direction:column; gap:9px; }
+.card-link {
+  display:flex; align-items:center; gap:12px;
+  padding:11px 14px; border-radius:14px;
+  text-decoration:none; transition:all .2s;
+  border:1px solid rgba(255,255,255,.09);
+}
+.card-link:hover { transform:translateX(4px); border-color:rgba(255,255,255,.22); }
+.cl-linkedin { background:rgba(10,102,194,.28); }
+.cl-github   { background:rgba(255,255,255,.07); }
+.cl-resume   { background:rgba(34,197,94,.18); }
+.cl-icon { font-size:24px; }
+.cl-info { flex:1; }
+.cl-name { display:block; font-size:14px; font-weight:700; color:#fff; }
+.cl-desc { display:block; font-size:11px; color:rgba(255,255,255,.5); }
+.cl-arr  { font-size:16px; color:rgba(255,255,255,.3); }
+
+/* Game Over */
+#gameover-screen { display:none; }
+#gameover-screen h2 { font-size:30px; font-weight:900; color:#e74c3c; text-align:center; }
+#gameover-screen p  { font-size:15px; color:rgba(255,255,255,.6); text-align:center; }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- ════════════════ WELCOME SCREEN ════════════════ -->
+<div class="screen" id="welcome-screen">
+  <div class="moon">🌙</div>
+  <div class="eid-greeting">Eid Al-Adha Mubarak</div>
+  <h1>May every year find<br>you in <span>good health</span> ✨</h1>
+  <div class="subtitle">
+    Catch <strong style="color:#fff">5 white sheep</strong> to win your reward.<br>
+    Avoid the red, black &amp; blue ones — or lose a life!
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot dot-white">🐑</div> Catch me!
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot dot-red">🐑</div> Avoid
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot dot-black">🐑</div> Avoid
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot dot-blue">🐑</div> Avoid
+    </div>
+  </div>
+  <button class="btn btn-gold" onclick="startGame()">Play Now ▶</button>
+</div>
+
+<!-- ════════════════ WIN SCREEN ════════════════ -->
+<div class="screen" id="win-screen">
+  <div id="gift-stage" onclick="openGift()">
+    <span id="gift-box">🎁</span>
+  </div>
+  <div id="gift-hint">Tap to open your reward!</div>
+
+  <div id="reward-card">
+    <div class="card-badge">🎉 Congratulations!</div>
+    <div class="card-title">You caught them all —<br>now catch <span>this opportunity.</span></div>
+    <div class="card-body">
+      You just proved you've got sharp instincts and quick reflexes.<br><br>
+      Allow me to introduce myself: I'm <strong>Marvin Ehab</strong>,  Engineering student at <strong>Cairo University</strong>, passionate about <strong>AI &amp; Software Development</strong> — and actively looking for an <strong>internship</strong> where I can make a real impact.<br><br>
+      Think I might be a good fit? Let's connect 👇
+    </div>
+    <div class="card-links">
+      <a href="https://www.linkedin.com/in/marvin-ehab" target="_blank" class="card-link cl-linkedin">
+        <span class="cl-icon">💼</span>
+        <span class="cl-info">
+          <span class="cl-name">LinkedIn</span>
+          <span class="cl-desc">Professional profile &amp; experience</span>
+        </span>
+        <span class="cl-arr">→</span>
+      </a>
+      <a href="https://github.com/MarvinEhab" target="_blank" class="card-link cl-github">
+        <span class="cl-icon">🐙</span>
+        <span class="cl-info">
+          <span class="cl-name">GitHub</span>
+          <span class="cl-desc">Projects &amp; open-source work</span>
+        </span>
+        <span class="cl-arr">→</span>
+      </a>
+      <a href="https://drive.google.com/file/d/1EN-XGIVp6zgtcMwo6U75I-qWM_wdrp4I/view?usp=sharing" target="_blank" class="card-link cl-resume">
+        <span class="cl-icon">📄</span>
+        <span class="cl-info">
+          <span class="cl-name">Resume / CV</span>
+          <span class="cl-desc">Download &amp; review</span>
+        </span>
+        <span class="cl-arr">→</span>
+      </a>
+    </div>
+  </div>
+  <button class="btn btn-ghost" onclick="restartGame()" style="margin-top:8px;font-size:11px;padding:7px 18px;opacity:0.5;flex-shrink:0;">Play Again 🔄</button>
+</div>
+
+<!-- ════════════════ GAME OVER SCREEN ════════════════ -->
+<div class="screen" id="gameover-screen">
+  <div style="font-size:64px">😅</div>
+  <h2>The sheep escaped!</h2>
+  <p>You clicked the wrong flock.<br>Give it another shot!</p>
+  <button class="btn btn-gold" style="margin-top:10px" onclick="restartGame()">Try Again ▶</button>
+</div>
+
+<!-- ════════════════ GAME FIELD ════════════════ -->
+<div id="game-field">
+  <div id="hud">
+    <div class="hud-box">
+      <span class="hud-label">Caught</span>
+      <span class="hud-value" id="hud-score">0</span>
+    </div>
+    <div id="hud-title">🐑 Sheep Hunt</div>
+    <div class="hud-box">
+      <span class="hud-label">Goal</span>
+      <span class="hud-value">5</span>
+    </div>
+  </div>
+
+  <div id="lives-bar">
+    <span class="life" id="l1">❤️</span>
+    <span class="life" id="l2">❤️</span>
+    <span class="life" id="l3">❤️</span>
+  </div>
+
+  <div id="prog-wrap">
+    <div id="prog-track"><div id="prog-fill"></div></div>
+    <div id="prog-label">0 / 5 white sheep</div>
+  </div>
+
+  <div id="ground">
+    🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿
+  </div>
+</div>
+
+<script>
+const GOAL = 5, MAX_LIVES = 3;
+const COLORS = ['white','white','red','black','blue'];
+
+let score=0, lives=MAX_LIVES, sheep=[], spawnTimer=null, moveTimer=null, active=false, spawnDelay=900;
+
+/* Stars */
+(function(){
+  const w=document.getElementById('stars');
+  for(let i=0;i<55;i++){
+    const s=document.createElement('div'); s.className='star';
+    const sz=Math.random()*2.5+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*65}%;left:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s;`;
+    w.appendChild(s);
+  }
+})();
+
+function startGame(){
+  document.getElementById('welcome-screen').style.display='none';
+  document.getElementById('gameover-screen').style.display='none';
+  document.getElementById('win-screen').style.display='none';
+  score=0; lives=MAX_LIVES; sheep=[]; spawnDelay=900;
+  updateHUD(); updateLives();
+  active=true;
+  scheduleSpawn();
+  moveTimer=setInterval(tick,40);
+}
+
+function restartGame(){
+  sheep.forEach(s=>s.el&&s.el.remove());
+  sheep=[];
+  clearTimeout(spawnTimer); clearInterval(moveTimer);
+  document.getElementById('reward-card').style.display='none';
+  document.getElementById('gift-box').style.display='block';
+  document.getElementById('gift-hint').style.display='block';
+  startGame();
+}
+
+/* Spawn */
+function scheduleSpawn(){
+  spawnTimer=setTimeout(()=>{
+    if(!active) return;
+    spawnSheep();
+    spawnDelay=Math.max(400,spawnDelay-35);
+    scheduleSpawn();
+  },spawnDelay);
+}
+
+function spawnSheep(){
+  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+  const el=document.createElement('div');
+  el.className=`sheep-wrap sheep-${color}`;
+
+  const badge=document.createElement('div');
+  badge.className=`sheep-badge badge-${color}`;
+  el.appendChild(badge);
+
+  const emojiSpan=document.createElement('span');
+  emojiSpan.className='sheep-emoji';
+  emojiSpan.textContent='🐑';
+  el.appendChild(emojiSpan);
+  el.style.cssText=`left:${Math.random()*(window.innerWidth-66)+6}px;top:-64px;`;
+
+  const sp={el,color,y:-64,speed:3+Math.random()*2.5,caught:false};
+  el.addEventListener('click',e=>clickSheep(sp,e));
+  el.addEventListener('touchstart',e=>{e.preventDefault();clickSheep(sp,e.touches[0]);},{passive:false});
+  document.getElementById('game-field').appendChild(el);
+  sheep.push(sp);
+}
+
+/* Move */
+function tick(){
+  const groundY=window.innerHeight-58;
+  sheep=sheep.filter(s=>{
+    if(s.caught||!s.el) return false;
+    s.y+=s.speed;
+    s.el.style.top=s.y+'px';
+    if(s.y>=groundY-56){
+      s.el.remove();
+      return false;
+    }
+    return true;
+  });
+}
+
+/* Click */
+function clickSheep(s,e){
+  if(!active||s.caught) return;
+  s.caught=true;
+  const x=e.clientX, y=e.clientY;
+  s.el.remove(); s.el=null;
+
+  if(s.color==='white'){
+    score++;
+    fx(x,y,'+1 ✓','fx-good');
+    updateHUD();
+    if(score>=GOAL) endGame(true);
+  } else {
+    lives--;
+    fx(x,y,'Wrong! -1 ♥','fx-wrong');
+    updateLives();
+    if(lives<=0) endGame(false);
+  }
+}
+
+/* FX */
+function fx(x,y,text,cls){
+  const el=document.createElement('div');
+  el.className='fx '+cls; el.textContent=text;
+  el.style.cssText=`left:${x-24}px;top:${y-16}px;`;
+  document.getElementById('game-field').appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+/* End */
+function endGame(won){
+  active=false;
+  clearTimeout(spawnTimer); clearInterval(moveTimer);
+  sheep.forEach(s=>s.el&&s.el.remove()); sheep=[];
+  setTimeout(()=>{
+    if(won){
+      document.getElementById('win-screen').style.display='flex';
+    } else {
+      document.getElementById('gameover-screen').style.display='flex';
+    }
+  },400);
+}
+
+/* Gift open */
+function openGift(){
+  const box=document.getElementById('gift-box');
+  if(box.style.display==='none') return;
+  box.style.transform='scale(1.3) rotate(15deg)';
+  box.style.opacity='0';
+  setTimeout(()=>{
+    box.style.display='none';
+    document.getElementById('gift-hint').style.display='none';
+    document.getElementById('reward-card').style.display='block';
+  },300);
+}
+
+/* HUD */
+function updateHUD(){
+  document.getElementById('hud-score').textContent=score;
+  document.getElementById('prog-fill').style.width=(score/GOAL*100)+'%';
+  document.getElementById('prog-label').textContent=`${score} / ${GOAL} white sheep`;
+}
+function updateLives(){
+  for(let i=1;i<=MAX_LIVES;i++){
+    document.getElementById('l'+i).classList.toggle('lost',i>lives);
+  }
+}
+</script>
+</body>
+</html>
